@@ -1,0 +1,13 @@
+language = "java"
+
+
+[autograder]
+# milliseconds
+default-timeout = 5000
+
+
+[codepost]
+assignment_name = "Assignment 1"
+course_name = "Deven Testing Course"
+course_period = "Fall 2020"
+api_key_path = "~/.config/codepost/api_key.txt"

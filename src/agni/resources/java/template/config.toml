@@ -1,0 +1,13 @@
+language = "java"
+
+
+[autograder]
+# milliseconds
+default-timeout = 5000
+
+
+[codepost]
+assignment_name = ""
+course_name = ""
+course_period = ""
+api_key_path = "~/.config/codepost/api_key.txt"

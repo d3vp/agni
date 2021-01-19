@@ -1,0 +1,13 @@
+language = "python"
+
+# Maximum time in seconds for which a test case is allowed to run.
+# This is to ensure all processes terminate.
+default_timeout = 60
+
+run_command = "python3"
+
+[codepost]
+assignment_name = ""
+course_name = ""
+course_period = ""
+api_key_path = "~/.config/codepost/api_key.txt"
