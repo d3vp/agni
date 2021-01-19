@@ -174,8 +174,8 @@ bundle/
 5. Upload the solution java files from `src/solutions/Author123/` to "4. Add solution code" on Codepost.
 
 6. In settings tab, uncheck the option shown below:
-
-    ![TestsSettings](docs/TestsSettings.png)
+    
+    <img src="docs/TestsSettings.png" width="70%">
 
 7. Enter file mode in Tests tab:
 
