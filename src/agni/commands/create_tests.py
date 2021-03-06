@@ -48,7 +48,7 @@ def main(bundle_dir: Path):
 
     metadata = json.loads((bundle_dir / f"{bundle_dir.name}_metadata.json").read_text())
 
-    cat2id = {info.get("test_category"): None for info in metadata.values()}
+    cat2id = {info.get("testcaseID").split("_@_")[0]: None for info in metadata.values()}
     for cat in cat2id.keys():
         obj = codepost.test_category.create(assignment=assignment.id, name=cat)
         cat2id[cat] = obj.id
@@ -64,8 +64,7 @@ def main(bundle_dir: Path):
         else:
             pointsPass = points
 
-        test_category = info.get("test_category")
-        test_name = info.get("test_name")
+        test_category, test_name = info.get("testcaseID").split("_@_")
         test_obj = codepost.test_case.create(
             testCategory=cat2id[test_category],
             type="external",

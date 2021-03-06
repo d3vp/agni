@@ -70,7 +70,7 @@ def main(students):
             config.dirs.submissions
             / f"{student_name}__{assignment.id}__{submission.id}"
         )
-        sub_dir.mkdir()
+        sub_dir.mkdir(exist_ok=True)
         # for fname in filenames:
         #     file_info = latest_files.loc[fname]
         #     (sub_dir / file_info.name).write_text(file_info.code)

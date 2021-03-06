@@ -55,7 +55,7 @@ public class Executor {
                 String msg = String.format("Timeout after %d milliseconds. You code may contain infinite loop.", timeout);
                 newPS.println(msg);
             } else if (error instanceof AssertionError) {
-                newPS.println(error.toString());
+                newPS.println(error.getMessage());
             } else {
                 error.printStackTrace(newPS);
             }

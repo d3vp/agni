@@ -5,6 +5,7 @@
 
 
 public class MinitesterTemplate {
+    // To skip running some tests, just comment them out below.
     static String[] tests = {
         //tests
     };
@@ -12,6 +13,7 @@ public class MinitesterTemplate {
         int numPassed = 0;
         for(String className: tests)    {
             System.out.printf("%n======= %s =======%n", className);
+            System.out.flush();
             try {
                 Runnable testCase = (Runnable) Class.forName(className).getDeclaredConstructor().newInstance();
                 testCase.run();

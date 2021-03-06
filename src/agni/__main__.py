@@ -8,7 +8,7 @@ from .commands import (
     create_tests,
     delete_tests,
     download_submissions,
-    update_test_results,
+    test_results,
 )
 
 
@@ -35,6 +35,6 @@ main.add_command(download_submissions.main, name="download-submissions")
 main.add_command(create_tests.main, name="create-tests")
 main.add_command(delete_tests.main, name="delete-tests")
 main.add_command(run_external.main, name="run-external")
-main.add_command(update_test_results.main, name="update-results")
+main.add_command(test_results.main, name="test-results")
 
 main(prog_name="agni")

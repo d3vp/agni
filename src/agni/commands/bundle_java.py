@@ -111,12 +111,16 @@ def get_test_metadata(testdir: Path, test_paths: Iterable[Path], prefix: str):
         else:
             info["code"] = re.sub(config_pattern, "", contents, flags=re.DOTALL)
 
+        if not info.get("show_code", True):
+            info["code"] = ""
+
         tokens = dotted_name.split(".")[-1].split("_", 1)
         if len(tokens) == 1:
             category, testname = "", tokens[0]
         else:
             category, testname = tokens
-        info["testcaseID"] = f"{prefix}{category}_@_{testname}"
+        category = f"{prefix}{category}".strip()
+        info["testcaseID"] = f"{category}_@_{testname}"
         result[dotted_name] = info
     return result
 
@@ -128,7 +132,7 @@ def generate_single_file(testcase_dir: Path, bundle_dir: Path, single_filename: 
     imports = set()
     testnames = []
     classes = []
-    for p in testcase_dir.glob("**/*.java"):
+    for p in sorted(testcase_dir.glob("**/*.java")):
         relp = p.relative_to(testcase_dir)
         tname = "{}.{}".format(".".join(relp.parent.parts), relp.stem)
         testnames.append(tname)
@@ -146,8 +150,12 @@ def generate_single_file(testcase_dir: Path, bundle_dir: Path, single_filename: 
     text = text.replace("MinitesterTemplate", Path(single_filename).stem)
     text = text.replace("//imports", "{}\n\n{}".format(package, "\n".join(imports)))
     text = text.replace("//classes", "\n\n\n".join(classes))
-    text = text.replace("//tests", ",\n".join(f'"{t}"' for t in testnames))
+    text = text.replace("//tests", ",\n".join(f'"{t}"' for t in sorted(testnames)))
     (bundle_dir / single_filename).write_text(text)
+
+
+def _show_files(tmpdir):
+    print([str(p.relative_to(tmpdir)) for p in tmpdir.glob("**/*")])
 
 
 def bundle(prefix: str, testcase_dir: Path, solution_dir: Path, bundle_dir: Path):
@@ -155,18 +163,32 @@ def bundle(prefix: str, testcase_dir: Path, solution_dir: Path, bundle_dir: Path
     with tempfile.TemporaryDirectory() as t1, tempfile.TemporaryDirectory() as t2:
         tmpbundle = Path(t1)
         tmpsolution = Path(t2)
+        
         classpaths = [config.dirs.helpers, solution_dir]
         files = [
-            *config.dirs.helpers.glob("**/*.java"),
             *Path(solution_dir).glob("**/*.java"),
         ]
         _build(
             ["javac"], files, classpaths=classpaths, dest=Path(tmpsolution),
         )
 
-        classpaths = [Path(tmpsolution), testcase_dir]
+        # _show_files(tmpsolution)
+
+        classpaths = [config.dirs.helpers, Path(tmpsolution)]
+        files = [
+            *config.dirs.helpers.glob("**/*.java"),
+        ]
+        _build(
+            ["javac"], files, classpaths=classpaths, dest=tmpbundle,
+        )
+
+        # _show_files(tmpbundle)
+
+        classpaths = [tmpbundle, Path(tmpsolution), testcase_dir]
         files = [*testcase_dir.glob("**/*.java")]
         _build(["javac"], files, classpaths=classpaths, dest=tmpbundle)
+
+        # _show_files(tmpbundle)
 
         with resources.path(f"agni.resources.java", "autograder") as agdir:
             _copytree(agdir, tmpbundle, keep_parent=False, ignore=ignore)
@@ -225,7 +247,7 @@ def bundle(prefix: str, testcase_dir: Path, solution_dir: Path, bundle_dir: Path
 
             javac -cp . $PKGNAME/*.java || exit 1
 
-            export CLASSPATH=".:{bundle_dir.name}.jar"
+            export CLASSPATH="{bundle_dir.name}.jar:."
             bash "{bundle_dir.name}_commands.sh" > "/outputs/user_tests.txt"
             """
         )

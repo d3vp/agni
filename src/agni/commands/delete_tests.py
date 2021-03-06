@@ -46,14 +46,20 @@ def main(bundle_dir: Path):
         print("Not continuing further, bye.")
         sys.exit(1)
 
-    metadata = json.loads((bundle_dir / f"{bundle_dir.name}_metadata.json").read_text())
-    cats_in_metadata = {info.get("test_category") for info in metadata.values()}
+    # metadata = json.loads((bundle_dir / f"{bundle_dir.name}_metadata.json").read_text())
+    # cats_in_metadata = {info.get("test_category") for info in metadata.values()}
 
     cat_objs = {
         cat.name: cat
         for cat in assignment.testCategories
-        if cat.name in cats_in_metadata
+        # if cat.name in cats_in_metadata
+        if cat.name in ("[secret] ", "[forbidden_checks]")
     }
+
+    # for c in cat_objs:
+    #     print(f"{c}|")
+
+    # sys.exit(1)
 
     print("Deleting the following categories:")
     for c in cat_objs:

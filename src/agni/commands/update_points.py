@@ -5,12 +5,12 @@ import sys
 import json
 
 
-def path_must_exist(ctx, param, value):
+def dir_must_exist(ctx, param, value):
     value = Path(value)
-    if value.exists() and value.is_file():
+    if value.exists() and value.is_dir():
         return value
     else:
-        raise click.BadParameter(f'Path "{value}" must be an existing file.')
+        raise click.BadParameter(f'Path "{value}" must be an existing directory.')
 
 
 @click.command()
@@ -19,8 +19,10 @@ def path_must_exist(ctx, param, value):
     expose_value=False,
     callback=lambda ctx, param, value: config.load(value),
 )
-@click.argument("metadata-file", nargs=1, callback=path_must_exist)
-def main(metadata_file: Path):
+@click.argument(
+    "bundle-dir", nargs=1, callback=dir_must_exist,
+)
+def main(bundle_dir: Path):
     """Update points of test cases on Codepost."""
     import codepost
 
@@ -45,25 +47,22 @@ def main(metadata_file: Path):
         sys.exit(1)
 
     tests_on_codepost = {
-        (cat.name, test.description): test
+        f"{cat.name}_@_{test.description}": test
         for cat in assignment.testCategories
         for test in cat.testCases
     }
 
-    metadata = json.loads(metadata_file.read_text())
-
-    tests_in_metadata = set(
-        (info.get("test_category"), info.get("test_name"))
-        for mod, info in metadata.items()
-    )
+    metadata = json.loads((bundle_dir / f"{bundle_dir.name}_metadata.json").read_text())
+    tests_in_metadata = set(info.get("testcaseID") for mod, info in metadata.items())
     diff = tests_in_metadata.difference(set(tests_on_codepost.keys()))
+
     if diff:
         print("The following test cases were found locally but not on codepost:")
         print("\n".join(f"{cat} : {test}" for cat, test in diff))
         sys.exit(1)
 
     for mod, info in metadata.items():
-        key = (info.get("test_category"), info.get("test_name"))
+        key = info.get("testcaseID")
         testobj = tests_on_codepost[key]
         points = info.get("points")
         if points < 0:

@@ -11,6 +11,7 @@ import shutil
 from datetime import datetime
 import re
 import shlex
+from typing import List
 
 
 def dir_must_exist(ctx, param, value):
@@ -51,20 +52,27 @@ def _copytree(src, dest, keep_parent=False, ignore=None):
 )
 @click.option("--num-procs", type=int, default=1)
 @click.option("--students", default=None, callback=file_must_exist)
+@click.option("--tests", default=None, callback=file_must_exist)
 @click.argument(
     "bundle-dir", nargs=1, callback=dir_must_exist,
 )
-def main(num_procs: int, students: Path, bundle_dir: Path):
+def main(num_procs: int, students: Path, tests: Path, bundle_dir: Path):
     """Run external tests on student submissions."""
     language = config.get("language")
     if language == "java":
-        asyncio.run(_main(num_procs, students, bundle_dir))
+        asyncio.run(_main(num_procs, students, tests, bundle_dir))
 
 
-async def _main(num_procs: int, students: Path, bundle_dir: Path):
+async def _main(num_procs: int, students: Path, testsfile: Path, bundle_dir: Path):
     if students:
-        student_list = {s.strip() for s in students.read_text().strip().splitlines()}
-        subdirs = [s for s in config.dirs.submissions.glob("*") if s in student_list]
+        student_list = {
+            s.strip().split("__")[0] for s in students.read_text().strip().splitlines()
+        }
+        subdirs = [
+            s
+            for s in config.dirs.submissions.glob("*")
+            if s.name.split("__")[0] in student_list
+        ]
         print("Running tests for the following students:")
         for s in sorted(student_list):
             print(s)
@@ -77,20 +85,51 @@ async def _main(num_procs: int, students: Path, bundle_dir: Path):
         print("Not continuing further, bye.")
         sys.exit(1)
 
+    commandfile = bundle_dir / f"{bundle_dir.name}_commands.sh"
+    if testsfile:
+        tests = set(s.strip() for s in testsfile.read_text().splitlines())
+        commands = [
+            [*shlex.split(line), "-DisExternal=true"]
+            for line in commandfile.read_text().splitlines()
+            if re.search(r'testcaseID="(.*?)"', line).group(1) in tests
+        ]
+    else:
+        commands = [
+            [*shlex.split(line), "-DisExternal=true"]
+            for line in commandfile.read_text().splitlines()
+        ]
+        print("Running ALL tests.")
+
+    print("Running the following tests:")
+    for cmd in commands:
+        # print(" ".join(cmd))
+        print(cmd)
+
+    answer = input("Continue? [yes/no]: ")
+    if answer != "yes":
+        print("Not continuing further, bye.")
+        sys.exit(1)
+
     graderdir = config.dirs.autograder / datetime.now().strftime("%Y-%m-%dT%H%M%S")
     outdir = graderdir / "outputs"
     outdir.mkdir(parents=True, exist_ok=True)
     jarfile = bundle_dir / f"{bundle_dir.name}.jar"
-    commandfile = bundle_dir / f"{bundle_dir.name}_commands.sh"
+
     coros = [
-        run(subdir, jarfile, commandfile, outdir / f"{subdir.name}.json")
+        run(subdir, jarfile, commands, outdir / f"{subdir.name}.json")
         for subdir in subdirs
     ]
-    async for _ in concurrent(coros, num_procs):
-        pass
+
+    with click.progressbar(length=len(coros), width=50) as bar:
+        async for _ in concurrent(coros, num_procs):
+            bar.update(1)
 
 
-async def run(subdir: Path, jarfile: Path, commandfile: Path, outputfile: Path):
+def _show_files(dir):
+    print([str(p.relative_to(dir)) for p in dir.glob("**/*")])
+
+
+async def run(subdir: Path, jarfile: Path, commands: List, outputfile: Path):
     with tempfile.TemporaryDirectory() as t:
         tmpdir = Path(t)
         if config.dirs.input_files.exists():
@@ -113,15 +152,16 @@ async def run(subdir: Path, jarfile: Path, commandfile: Path, outputfile: Path):
             ["javac", "-cp", ".", *(str(p) for p in tmpdir.glob("**/*.java"))],
             cwd=tmpdir,
         )
-        print(list(tmpdir.glob("**/*")))
+
+        # _show_files(tmpdir)
+
         if proc_result.returncode != 0:
             result = {"compile_error": f"{proc_result.stdout}{proc_result.stderr}"}
             outputfile.write_text(json.dumps(result))
             return
 
         with open(outputfile, "wt") as fout:
-            for line in commandfile.read_text().splitlines():
-                cmd = [*shlex.split(line), "-DisExternal=true"]
+            for cmd in commands:
                 proc_result = await run_process(
                     cmd,
                     cwd=tmpdir,
@@ -131,10 +171,10 @@ async def run(subdir: Path, jarfile: Path, commandfile: Path, outputfile: Path):
                     },
                 )
                 if proc_result.error:
-                    print(line)
+                    print(" ".join(cmd))
                     print(proc_result.error)
                 elif proc_result.returncode != 0:
-                    print(line)
+                    print(" ".join(cmd))
                     print(proc_result.stdout)
                     print(proc_result.stderr)
                 else:
