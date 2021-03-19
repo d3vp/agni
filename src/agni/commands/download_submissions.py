@@ -14,10 +14,10 @@ import sys
 @click.option("--students", required=False, default=None)
 def main(students):
     """Download student submissions from Codepost."""
-    # filenames = config.get("filenames")
-    # if not filenames:
-    #     print("Please set filenames in config.toml")
-    #     sys.exit(1)
+    filenames = config.get("filenames")
+    if not filenames:
+        print("Please set filenames in config.toml")
+        sys.exit(1)
 
     import codepost
 
@@ -64,16 +64,16 @@ def main(students):
         )
         latest_files = (
             files.sort_values("created").drop_duplicates("name", keep="last")
-            # .set_index("name")
+            .set_index("name")
         )
         sub_dir = (
             config.dirs.submissions
             / f"{student_name}__{assignment.id}__{submission.id}"
         )
         sub_dir.mkdir(exist_ok=True)
-        # for fname in filenames:
-        #     file_info = latest_files.loc[fname]
-        #     (sub_dir / file_info.name).write_text(file_info.code)
+        for fname in filenames:
+            file_info = latest_files.loc[fname]
+            (sub_dir / file_info.name).write_text(file_info.code)
 
-        for _, row in latest_files.iterrows():
-            (sub_dir / row["name"]).write_text(row["code"])
+        # for _, row in latest_files.iterrows():
+        #     (sub_dir / row["name"]).write_text(row["code"])
