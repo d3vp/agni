@@ -164,17 +164,17 @@ def update_results(outdir: Path, bundle_dir: Path):
 
         if len(lines) == 1 and "compile_error" in json.loads(lines[0]):
             continue
-            # compile_error = json.loads(lines[0])["compile_error"]
-            # for testobj in test_to_update.values():
-            #     args = {
-            #         "submission": int(resultfile.stem.split("__")[-1]),
-            #         "testCase": testobj.id,
-            #         "passed": False,
-            #         "logs": compile_error,
-            #     }
-            #     # print(json.dumps(args))
-            #     subtestobj = codepost.submission_test.create(**args)
-            #     print(subtestobj)
+            compile_error = json.loads(lines[0])["compile_error"]
+            for testobj in test_to_update.values():
+                args = {
+                    "submission": int(resultfile.stem.split("__")[-1]),
+                    "testCase": testobj.id,
+                    "passed": False,
+                    "logs": compile_error,
+                }
+                # print(json.dumps(args))
+                subtestobj = codepost.submission_test.create(**args)
+                print(subtestobj)
         else:
             for line in lines:
                 data = json.loads(line)
