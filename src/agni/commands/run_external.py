@@ -88,16 +88,17 @@ async def _main(num_procs: int, students: Path, testsfile: Path, bundle_dir: Pat
     commandfile = bundle_dir / f"{bundle_dir.name}_commands.sh"
     if testsfile:
         tests = set(s.strip() for s in testsfile.read_text().splitlines())
-        commands = [
-            [*shlex.split(line), "-DisExternal=true"]
-            for line in commandfile.read_text().splitlines()
-            if re.search(r'testcaseID="(.*?)"', line).group(1) in tests
-        ]
+        commands = []
+        for line in commandfile.read_text().splitlines():
+            if re.search(r'testcaseID="(.*?)"', line).group(1) in tests:
+                args = shlex.split(line)
+                commands.append([args[0], "-DisExternal=true", *args[1:]])
     else:
-        commands = [
-            [*shlex.split(line), "-DisExternal=true"]
-            for line in commandfile.read_text().splitlines()
-        ]
+        commands = []
+        for line in commandfile.read_text().splitlines():
+            args = shlex.split(line)
+            commands.append([args[0], "-DisExternal=true", *args[1:]])
+
         print("Running ALL tests.")
 
     print("Running the following tests:")
