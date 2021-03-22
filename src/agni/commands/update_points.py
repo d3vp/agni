@@ -70,5 +70,5 @@ def main(bundle_dir: Path):
             testobj.pointsFail = points
         else:
             testobj.pointsPass = points
-        response = testobj.saveInstance()
+        response = testobj.save()
         print("[OK]" if response else "[FAILED]", response)
