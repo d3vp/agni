@@ -64,7 +64,7 @@ def main(bundle_dir: Path):
     for mod, info in metadata.items():
         key = info.get("testcaseID")
         testobj = tests_on_codepost[key]
-        print(dir(testobj))
+
         points = info.get("points")
         if points < 0:
             testobj.pointsFail = points
