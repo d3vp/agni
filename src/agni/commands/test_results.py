@@ -178,7 +178,7 @@ def update_results(outdir: Path, bundle_dir: Path):
             for line in lines:
                 data = json.loads(line)
                 # cat, name = data["id"].split("_@_")  # TODO remove
-                testobj = test_to_update["id"]
+                testobj = test_to_update[data["id"]]
                 args = {
                     "submission": int(resultfile.stem.split("__")[-1]),
                     "testCase": testobj.id,
