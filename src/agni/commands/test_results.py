@@ -71,7 +71,7 @@ def main(students: Path, download: Path, update: Path, bundle_dir: Path):
     if download:
         save_results(student_list, download)
     elif update:
-        update_results(update, bundle_dir)
+        update_results(student_list, update, bundle_dir)
     else:
         print("Invalid options")  # TODO
 
@@ -125,7 +125,7 @@ def save_results(students: List[str], csvfile: Path):
     df.to_csv(csvfile, index=False)
 
 
-def update_results(outdir: Path, bundle_dir: Path):
+def update_results(students: List[str], outdir: Path, bundle_dir: Path):
     import codepost
 
     assignment = get_assignment()
@@ -157,6 +157,9 @@ def update_results(outdir: Path, bundle_dir: Path):
         sys.exit(1)
 
     for resultfile in outdir.glob("*.json"):
+        if resultfile.name.strip().split("__")[0] not in students:
+            continue
+
         lines = resultfile.read_text().splitlines()
         compile_error = None
 
@@ -187,4 +190,4 @@ def update_results(outdir: Path, bundle_dir: Path):
                 }
                 # print(json.dumps(args))
                 subtestobj = codepost.submission_test.create(**args)
-                print(subtestobj)
+                print("[OK]" if subtestobj else "[FAILED]")
