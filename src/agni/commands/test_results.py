@@ -163,7 +163,6 @@ def update_results(outdir: Path, bundle_dir: Path):
         print(resultfile.name)
 
         if len(lines) == 1 and "compile_error" in json.loads(lines[0]):
-            continue
             compile_error = json.loads(lines[0])["compile_error"]
             for testobj in test_to_update.values():
                 args = {
@@ -178,8 +177,8 @@ def update_results(outdir: Path, bundle_dir: Path):
         else:
             for line in lines:
                 data = json.loads(line)
-                cat, name = data["id"].split("_@_")  # TODO remove
-                testobj = test_to_update[f"{cat.strip()}_@_{name}"]
+                # cat, name = data["id"].split("_@_")  # TODO remove
+                testobj = test_to_update["id"]
                 args = {
                     "submission": int(resultfile.stem.split("__")[-1]),
                     "testCase": testobj.id,
