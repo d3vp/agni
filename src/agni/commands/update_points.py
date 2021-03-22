@@ -61,6 +61,8 @@ def main(bundle_dir: Path):
         print("\n".join(f"{cat} : {test}" for cat, test in diff))
         sys.exit(1)
 
+    print(tests_on_codepost)
+    sys.exit(1)
     for mod, info in metadata.items():
         key = info.get("testcaseID")
         testobj = tests_on_codepost[key]
