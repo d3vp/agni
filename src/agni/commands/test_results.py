@@ -125,6 +125,15 @@ def save_results(students: List[str], csvfile: Path):
     df.to_csv(csvfile, index=False)
 
 
+control_translator = str.maketrans(
+    {
+        c: f"[U+{ord(c):04X}]"
+        for c in "".join(map(chr, list(range(0x00, 0x20)) + list(range(0x7F, 0xA0))))
+        if c not in ("\n", "\t", "\r")
+    }
+)
+
+
 def update_results(students: List[str], outdir: Path, bundle_dir: Path):
     import codepost
 
@@ -180,13 +189,13 @@ def update_results(students: List[str], outdir: Path, bundle_dir: Path):
         else:
             for line in lines:
                 data = json.loads(line)
-                # cat, name = data["id"].split("_@_")  # TODO remove
                 testobj = test_to_update[data["id"]]
+                logs = data["log"][:5000].translate(control_translator)
                 args = {
                     "submission": int(resultfile.stem.split("__")[-1]),
                     "testCase": testobj.id,
                     "passed": data["passed"],
-                    "logs": data["log"][:5000],
+                    "logs": logs,
                 }
                 # print(json.dumps(args))
                 subtestobj = codepost.submission_test.create(**args)
